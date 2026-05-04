@@ -2,6 +2,7 @@ package ai
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"google.golang.org/genai"
@@ -15,31 +16,48 @@ type GeminiClient struct {
 // initializes a client for a specific model (e.g., "gemini-2.0-flash")
 func NewClient(ctx context.Context, modelName string) (*GeminiClient, error) {
 	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("GEMINI_API_KEY is not set")
+	}
+
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
-		APIKey:  apiKey,
-		Backend: genai.BackendGoogleAI,
+		APIKey: apiKey,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create gemini client: %w", err)
 	}
 
-	return &GeminiClient{
-		Client: client,
-		Model:  modelName,
-	}, nil
+	return &GeminiClient{Client: client, Model: modelName}, nil
 }
 
-// Generate is a simple wrapper to get text out of the model
-func (g *GeminiClient) Generate(ctx context.Context, prompt string) (string, error) {
+// regular prompt
+func (g *GeminiClient) Prompt(ctx context.Context, prompt string) (string, error) {
 	result, err := g.Client.Models.GenerateContent(ctx, g.Model, genai.Text(prompt), nil)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("generate failed: %w", err)
 	}
 
-	//grab the first candidate's text
-	if len(result.Candidates) > 0 && len(result.Candidates[0].Content.Parts) > 0 {
-		return result.Candidates[0].Content.Parts[0].Text, nil
+	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("empty response from gemini")
 	}
 
-	return "", nil
+	return result.Candidates[0].Content.Parts[0].Text, nil
+}
+
+// GenerateJSON sends a prompt and forces a JSON response
+func (g *GeminiClient) PromptJSON(ctx context.Context, prompt string) (string, error) {
+	config := &genai.GenerateContentConfig{
+		ResponseMIMEType: "application/json",
+	}
+
+	result, err := g.Client.Models.GenerateContent(ctx, g.Model, genai.Text(prompt), config)
+	if err != nil {
+		return "", fmt.Errorf("generateJSON failed: %w", err)
+	}
+
+	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("empty response from gemini")
+	}
+
+	return result.Candidates[0].Content.Parts[0].Text, nil
 }
