@@ -21,7 +21,7 @@ import (
 //go:embed routerater_prompt.txt
 var raterPrompt string
 
-func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.GeminiClient) {
+func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) {
 	ctx := context.Background()
 
 	//get next unmaterialized row
@@ -101,5 +101,4 @@ func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.Gemini
 	}
 	log.Printf("rated row: %s", id)
 
-	_ = dumbModel // unused in processor for now
 }

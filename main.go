@@ -30,22 +30,44 @@ func main() {
 	defer pool.Close()
 
 	//init Gemini clients
-	smartModel, err := ai.NewClient(ctx, "gemini-3-flash-preview")
+
+	genModelName := os.Getenv("genModel")
+	if genModelName == "" {
+		log.Printf("genModel not set")
+		return
+	}
+	validModelName := os.Getenv("validModel")
+	if validModelName == "" {
+		log.Printf("validModel not set")
+		return
+	}
+	rateModelName := os.Getenv("rateModel")
+	if rateModelName == "" {
+		log.Printf("rateModel not set")
+		return
+	}
+
+	genModel, err := ai.NewClient(ctx, genModelName)
 	if err != nil {
 		log.Fatalf("smart model init failed: %v", err)
 	}
 
-	dumbModel, err := ai.NewClient(ctx, "gemini-2.5-flash")
+	validModel, err := ai.NewClient(ctx, validModelName)
 	if err != nil {
 		log.Fatalf("dumb model init failed: %v", err)
+	}
+
+	raterModel, err := ai.NewClient(ctx, rateModelName)
+	if err != nil {
+		log.Fatalf("smart model init failed: %v", err)
 	}
 
 	//CLI command
 	switch os.Args[1] {
 	case "generate":
-		routecreator.Run(pool, smartModel, dumbModel)
+		routecreator.Run(pool, genModel, validModel)
 	case "process":
-		routeprocessor.Run(pool, smartModel, dumbModel)
+		routeprocessor.Run(pool, raterModel)
 	default:
 		log.Fatalf("unknown subcommand: %s", os.Args[1])
 	}
