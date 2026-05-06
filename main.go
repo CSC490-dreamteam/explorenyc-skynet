@@ -23,5 +23,5 @@ func main() {
 		return
 	}
 
-	fmt.Println(flash.Prompt(context.Background(), "whats 2+2?"))
+	fmt.Println(flash.Prompt("whats 2+2?"))
 }

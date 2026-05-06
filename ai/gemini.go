@@ -31,7 +31,10 @@ func NewClient(ctx context.Context, modelName string) (*GeminiClient, error) {
 }
 
 // regular prompt
-func (g *GeminiClient) Prompt(ctx context.Context, prompt string) (string, error) {
+func (g *GeminiClient) Prompt(prompt string) (string, error) {
+
+	ctx := context.Background()
+
 	result, err := g.Client.Models.GenerateContent(ctx, g.Model, genai.Text(prompt), nil)
 	if err != nil {
 		return "", fmt.Errorf("generate failed: %w", err)
@@ -45,7 +48,8 @@ func (g *GeminiClient) Prompt(ctx context.Context, prompt string) (string, error
 }
 
 // GenerateJSON sends a prompt and forces a JSON response
-func (g *GeminiClient) PromptJSON(ctx context.Context, prompt string) (string, error) {
+func (g *GeminiClient) PromptJSON(prompt string) (string, error) {
+	ctx := context.Background()
 	config := &genai.GenerateContentConfig{
 		ResponseMIMEType: "application/json",
 	}
