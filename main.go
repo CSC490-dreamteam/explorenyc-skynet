@@ -2,26 +2,48 @@ package main
 
 import (
 	"context"
-	"explorenyc-skynet/ai"
-	"fmt"
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
+
+	"explorenyc-skynet/ai"
+	"explorenyc-skynet/db"
+	"explorenyc-skynet/routecreator"
 )
 
 func main() {
-	fmt.Println("Hello, World!")
+	_ = godotenv.Load()
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("No .env file found, using system environment variables")
+	if len(os.Args) < 2 {
+		log.Fatal("usage: app <generate>")
 	}
 
-	flash, err := ai.NewClient(context.Background(), "gemini-2.5-flash")
+	ctx := context.Background()
+
+	//init DB pool
+	pool, err := db.InitPool(ctx)
 	if err != nil {
-		fmt.Printf("Error creating Gemini client: %v\n", err)
-		return
+		log.Fatalf("db init failed: %v", err)
+	}
+	defer pool.Close()
+
+	//init Gemini clients
+	smartModel, err := ai.NewClient(ctx, "gemini-3-flash-preview")
+	if err != nil {
+		log.Fatalf("smart model init failed: %v", err)
 	}
 
-	fmt.Println(flash.Prompt("whats 2+2?"))
+	dumbModel, err := ai.NewClient(ctx, "gemini-2.5-flash")
+	if err != nil {
+		log.Fatalf("dumb model init failed: %v", err)
+	}
+
+	//CLI command
+	switch os.Args[1] {
+	case "generate":
+		routecreator.Run(pool, smartModel, dumbModel)
+	default:
+		log.Fatalf("unknown subcommand: %s", os.Args[1])
+	}
 }

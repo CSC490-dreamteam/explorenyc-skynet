@@ -12,7 +12,7 @@ var scenariosCSV string
 
 type Scenario struct {
 	Name            string
-	ScenarioID      string
+	ID              string
 	Summary         string
 	CoreTest        string
 	GeneratorPrompt string
@@ -26,7 +26,7 @@ func init() {
 	for _, rec := range records[1:] {
 		AllScenarios = append(AllScenarios, Scenario{
 			Name:            rec[0],
-			ScenarioID:      rec[1],
+			ID:              rec[1],
 			Summary:         rec[2],
 			CoreTest:        rec[3],
 			GeneratorPrompt: rec[4],
