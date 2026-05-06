@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -38,4 +39,16 @@ func InsertRouteRating(ctx context.Context, pool *pgxpool.Pool, materializerID s
 	updateQuery := `UPDATE route_maker SET is_rated = TRUE WHERE id = $1`
 	_, err := pool.Exec(ctx, updateQuery, materializerID)
 	return err
+}
+
+func MarkAsMaterialized(ctx context.Context, pool *pgxpool.Pool, id string, jsonOutput []byte) error {
+	_, err := pool.Exec(ctx, `
+		UPDATE route_maker
+		SET json_output = $1, is_materialized = true
+		WHERE id = $2
+	`, jsonOutput, id)
+	if err != nil {
+		return fmt.Errorf("mark as materialized failed: %w", err)
+	}
+	return nil
 }

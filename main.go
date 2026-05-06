@@ -10,6 +10,7 @@ import (
 	"explorenyc-skynet/ai"
 	"explorenyc-skynet/db"
 	"explorenyc-skynet/routecreator"
+	"explorenyc-skynet/routeprocessor"
 )
 
 func main() {
@@ -43,6 +44,8 @@ func main() {
 	switch os.Args[1] {
 	case "generate":
 		routecreator.Run(pool, smartModel, dumbModel)
+	case "process":
+		routeprocessor.Run(pool, smartModel, dumbModel)
 	default:
 		log.Fatalf("unknown subcommand: %s", os.Args[1])
 	}
