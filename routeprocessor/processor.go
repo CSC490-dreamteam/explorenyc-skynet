@@ -67,7 +67,11 @@ func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.Gemini
 		return
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	engineStatus := "OK — engine returned a valid itinerary."
+	if resp.StatusCode == 422 {
+		log.Printf("routing engine returned 422 (impossible route) for %s, going to guess why", id)
+		engineStatus = "FAILED — engine returned 422 (impossible to route). Score everything 0 and guess why."
+	} else if resp.StatusCode != http.StatusOK {
 		log.Printf("routing engine returned %d: %s", resp.StatusCode, string(body))
 		return
 	}
@@ -82,6 +86,7 @@ func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.Gemini
 	//build the rater prompt and call smartModel for ratings
 	ratePrompt := strings.ReplaceAll(raterPrompt, "{{TRIP_INPUT}}", string(jsonInput))
 	ratePrompt = strings.ReplaceAll(ratePrompt, "{{TRIP_OUTPUT}}", string(body))
+	ratePrompt = strings.ReplaceAll(ratePrompt, "{{ENGINE_STATUS}}", engineStatus)
 
 	ratingsJSON, err := smartModel.PromptJSON(ratePrompt)
 	if err != nil {
@@ -90,7 +95,7 @@ func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.Gemini
 	}
 
 	//insert rating into DB
-	if err := db.InsertRouteRating(ctx, DBpool, id, []byte(ratingsJSON), "gemini-1.5-pro"); err != nil {
+	if err := db.InsertRouteRating(ctx, DBpool, id, []byte(ratingsJSON), smartModel.Model); err != nil {
 		log.Printf("insert rating failed: %v", err)
 		return
 	}

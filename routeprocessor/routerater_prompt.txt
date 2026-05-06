@@ -23,6 +23,7 @@ If the engine status above indicates a failure, the routing engine could not pro
   - Set every "score" to 0
   - Use the "rationale" field of each sub-criterion to guess WHY the request was unsatisfiable based on the REQUEST below (e.g. too many stops, conflicting time windows, mandatory stops too far apart, transit modes too restrictive, etc.)
   - The TRIP_OUTPUT below may be empty or contain an error message.
+  - try to guess specific edits to the route that could make it viable
 
 ═══════════════════════════════════════════════════════════
 SCORING RUBRIC
