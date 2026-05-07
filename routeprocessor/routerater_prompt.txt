@@ -20,8 +20,10 @@ ENGINE STATUS
 {{ENGINE_STATUS}}
 
 If the engine status above indicates a failure, the routing engine could not produce a valid itinerary for this request. In that case:
-  - Set every "score" to 0
-  - Use the "rationale" field of each sub-criterion to guess WHY the request was unsatisfiable based on the REQUEST below (e.g. too many stops, conflicting time windows, mandatory stops too far apart, transit modes too restrictive, etc.)
+  - Set every "score" to 0.
+  - Pick only the 2–3 sub-criteria that most clearly explain WHY the request failed (e.g. schedule_compression if too many stops, geographic_cohesion if stops are impossibly far apart).
+  - In those 2–3 fields only, write a short rationale identifying the failure cause.
+  - In every other sub-criterion's "rationale" field, write exactly: "Route unsatisfiable".
   - The TRIP_OUTPUT below may be empty or contain an error message.
   - try to guess specific edits to the route that could make it viable
 
