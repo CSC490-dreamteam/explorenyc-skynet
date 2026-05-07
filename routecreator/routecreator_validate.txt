@@ -7,7 +7,7 @@ GENERATED JSON:
 {{GENERATED_JSON}}
 
 CHECKLIST:
-1. Is it valid JSON matching the requested schema?
+1. Is it valid JSON matching the requested schema (e.g, no extra brackets/braces that will break the http endpoint)?
 2. TOTAL LIMIT: Count the start_location (1), the end_location (1 if not null, 0 if null), and the number of items in the "stops" array. Is the combined total 10 or fewer?
 3. Are all time fields (entry_time, exit_time, time_preference) in 12-hour format (e.g., "09:00 AM") or null?
 4. Are the start/end locations exactly "penn station new york ny", "grand central terminal new york ny", or null?
