@@ -12,6 +12,8 @@ CHECKLIST:
 3. Are all time fields (entry_time, exit_time, time_preference) in 12-hour format (e.g., "09:00 AM") or null?
 4. Are the start/end locations exactly "penn station new york ny", "grand central terminal new york ny", or null?
 5. LOGIC CHECK: Do the chosen stops mostly match the neighborhood, time constraints, and logic requested in the scenario, with reasonable allowance for stops slightly outside the neighborhood but still nearby? (e.g., if it asked for a tight cluster in SoHo, are the stops primarily in SoHo or adjacent areas? Are the durations reasonable?)
+IMPORTANT EXCEPTION: "penn station new york ny" and "grand central terminal new york ny" are the ONLY valid startLocation and endLocation values. These are fixed transit hubs and must NEVER be flagged as geographically inconsistent regardless of the scenario's neighborhood focus. They are entry/exit points, not tourist stops.
+
 
 If it passes all checks, respond with EXACTLY the word: VALID
 If it fails ANY check, respond with the word INVALID followed by a one-sentence reason. 

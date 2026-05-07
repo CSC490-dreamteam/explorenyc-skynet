@@ -53,11 +53,6 @@ func (g *GeminiClient) PromptJSON(prompt string) (string, error) {
 	config := &genai.GenerateContentConfig{
 		ResponseMIMEType: "application/json",
 	}
-	if g.Model == "gemma-4-26b-a4b-it" || g.Model == "gemma-4-31b-it" {
-		config.ThinkingConfig = &genai.ThinkingConfig{
-			ThinkingLevel: "high",
-		}
-	}
 
 	result, err := g.Client.Models.GenerateContent(ctx, g.Model, genai.Text(prompt), config)
 	if err != nil {
