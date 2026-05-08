@@ -12,6 +12,7 @@ import (
 	"explorenyc-skynet/db"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/genai"
 )
 
 //go:embed routecreator_prompt.txt
@@ -63,4 +64,117 @@ func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.Gemini
 
 	log.Printf("inserted route_maker row: %s", id)
 
+}
+
+const batchjobName = "take1-of-skynet"
+
+func BatchSubmit(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, batchname string) {
+	const batchRunsPerScenario = 3
+	ctx := context.Background()
+
+	placesList := data.FormatPlacesForPrompt()
+
+	//build one inline request per scenario per run
+	var inlined []*genai.InlinedRequest
+	for _, scenario := range data.AllScenarios {
+		for i := 0; i < batchRunsPerScenario; i++ {
+			prompt := strings.ReplaceAll(creatorPrompt, "{{SCENARIO_INSTRUCTIONS}}", scenario.GeneratorPrompt)
+			prompt = strings.ReplaceAll(prompt, "{{AVAILABLE_PLACES}}", placesList)
+
+			inlined = append(inlined, &genai.InlinedRequest{
+				Contents: []*genai.Content{genai.NewContentFromText(prompt, genai.RoleUser)},
+				Config: &genai.GenerateContentConfig{
+					ResponseMIMEType: "application/json",
+				},
+			})
+		}
+	}
+
+	log.Printf("submitting batch with %d requests", len(inlined))
+
+	job, err := smartModel.Client.Batches.Create(ctx, smartModel.Model, &genai.BatchJobSource{
+		InlinedRequests: inlined,
+	}, &genai.CreateBatchJobConfig{
+		DisplayName: batchname,
+	})
+	if err != nil {
+		log.Printf("batch create failed: %v", err)
+		return
+	}
+
+	log.Printf("batch submitted: displayName=%s name=%s state=%s", job.DisplayName, job.Name, job.State)
+
+}
+
+func RunBatchFetch(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.GeminiClient, jobName string) {
+	ctx := context.Background()
+
+	job, err := smartModel.Client.Batches.Get(ctx, jobName, nil)
+	if err != nil {
+		log.Printf("batch get failed: %v", err)
+		return
+	}
+
+	log.Printf("batch %s state: %s", job.Name, job.State)
+
+	if job.State != genai.JobStateSucceeded {
+		log.Printf("batch not done yet (or failed), exiting")
+		return
+	}
+
+	if job.Dest == nil || job.Dest.InlinedResponses == nil {
+		log.Printf("no inlined responses on completed job")
+		return
+	}
+
+	placesList := data.FormatPlacesForPrompt()
+
+	inserted, rejected, errored := 0, 0, 0
+
+	for i, resp := range job.Dest.InlinedResponses {
+		if resp.Error != nil {
+			log.Printf("response %d errored: %v", i, resp.Error)
+			errored++
+			continue
+		}
+		if resp.Response == nil || len(resp.Response.Candidates) == 0 {
+			log.Printf("response %d has no candidates", i)
+			errored++
+			continue
+		}
+
+		generatedJSON := resp.Response.Text()
+
+		//pick a random scenario for validation + db insert
+		scenario := data.RandomScenario()
+
+		valPrompt := strings.ReplaceAll(validatorPrompt, "{{SCENARIO_INSTRUCTIONS}}", scenario.GeneratorPrompt)
+		valPrompt = strings.ReplaceAll(valPrompt, "{{GENERATED_JSON}}", generatedJSON)
+
+		verdict, err := dumbModel.Prompt(valPrompt)
+		if err != nil {
+			log.Printf("response %d validation call failed: %v", i, err)
+			errored++
+			continue
+		}
+
+		if !strings.HasPrefix(strings.TrimSpace(verdict), "VALID") {
+			log.Printf("response %d rejected: %s", i, verdict)
+			rejected++
+			continue
+		}
+
+		id, err := db.InsertCreatedRoute(ctx, DBpool, []byte(generatedJSON), scenario.ID, smartModel.Model)
+		if err != nil {
+			log.Printf("response %d db insert failed: %v", i, err)
+			errored++
+			continue
+		}
+
+		log.Printf("inserted route_maker row: %s", id)
+		inserted++
+	}
+
+	log.Printf("batch fetch complete: inserted=%d rejected=%d errored=%d", inserted, rejected, errored)
+	_ = placesList //placeholder if you need it later
 }

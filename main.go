@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"os"
 
@@ -17,8 +18,9 @@ func main() {
 	_ = godotenv.Load()
 
 	if len(os.Args) < 2 {
-		log.Fatal("usage: app <generate>")
+		log.Fatal("usage: app <generate|process|batch-submit|batch-fetch>")
 	}
+	subcommand := os.Args[1]
 
 	ctx := context.Background()
 
@@ -63,12 +65,29 @@ func main() {
 	}
 
 	//CLI command
-	switch os.Args[1] {
+	switch subcommand {
 	case "generate":
 		routecreator.Run(pool, genModel, validModel)
 	case "process":
 		routeprocessor.Run(pool, raterModel)
+	case "batch-submit":
+		fs := flag.NewFlagSet("batch-submit", flag.ExitOnError)
+		name := fs.String("n", "", "display name for the batch job")
+		fs.Parse(os.Args[2:])
+		if *name == "" {
+			log.Fatal("batch-submit requires -n <name>")
+		}
+		routecreator.BatchSubmit(pool, genModel, *name)
+	case "batch-fetch":
+		fs := flag.NewFlagSet("batch-fetch", flag.ExitOnError)
+		name := fs.String("n", "", "batch job name (e.g. batches/abc123)")
+		fs.Parse(os.Args[2:])
+		if *name == "" {
+			log.Fatal("batch-fetch requires -n <job-name>")
+		}
+		routecreator.RunBatchFetch(pool, genModel, validModel, *name)
 	default:
-		log.Fatalf("unknown subcommand: %s", os.Args[1])
+		log.Fatalf("unknown subcommand: %s", subcommand)
 	}
+
 }
