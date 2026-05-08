@@ -18,9 +18,9 @@ func main() {
 	_ = godotenv.Load()
 
 	if len(os.Args) < 2 {
-		log.Fatal("usage: app <generate|process|batch-submit|batch-fetch|batch-list|batch-rate-submit|batch-rate-fetch>")
-
+		log.Fatal("usage: app <generate|process|batch-submit|batch-fetch|batch-list|batch-rate-submit|batch-rate-fetch|batch-rate-full|batch-rate-mat>")
 	}
+
 	subcommand := os.Args[1]
 
 	ctx := context.Background()
@@ -103,6 +103,23 @@ func main() {
 			log.Fatal("batch-rate-fetch requires -n <job-name>")
 		}
 		routeprocessor.BatchRateFetch(pool, raterModel, *name)
+
+	case "batch-rate-full":
+		fs := flag.NewFlagSet("batch-rate-full", flag.ExitOnError)
+		name := fs.String("n", "", "display name for the rating batch job")
+		fs.Parse(os.Args[2:])
+		if *name == "" {
+			log.Fatal("batch-rate-full requires -n <name>")
+		}
+		routeprocessor.BatchRateFull(pool, raterModel, *name)
+	case "batch-rate-mat":
+		fs := flag.NewFlagSet("batch-rate-mat", flag.ExitOnError)
+		name := fs.String("n", "", "display name for the materialized rating batch job")
+		fs.Parse(os.Args[2:])
+		if *name == "" {
+			log.Fatal("batch-rate-mat requires -n <name>")
+		}
+		routeprocessor.BatchRateMat(pool, raterModel, *name)
 
 	default:
 		log.Fatalf("unknown subcommand: %s", subcommand)

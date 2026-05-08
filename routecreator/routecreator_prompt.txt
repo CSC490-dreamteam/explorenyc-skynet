@@ -24,6 +24,7 @@ STRICT RULES:
 3. TIME FORMAT: Use strict 12-hour format with AM/PM (e.g., "09:00 AM", "02:30 PM"). If no time preference is needed for a stop, use null.
 4. START/END LOCATIONS: "start_location" must ONLY be "penn station new york ny" or "grand central terminal new york ny". "end_location" can be one of those two, or null.
 5. TRANSIT TYPES: Always include the "transitTypes" map with walking, car, and subway boolean values that make sense for the scenario.
+6. FEASIBILITY: Consider travel time betwen stops that are realistic so that it is actual possible within the given time constraints.
 
 OUTPUT SCHEMA (Respond ONLY with valid JSON):
 {

@@ -15,6 +15,23 @@ ITINERARY RETURNED BY ROUTING ENGINE:
 {{TRIP_OUTPUT}}
 
 ═══════════════════════════════════════════════════════════
+TIME FORMAT (CRITICAL — DO NOT SKIP)
+═══════════════════════════════════════════════════════════
+
+All `ArrivalTimeInMinutes` and `DepartureTimeInMinutes` are minutes since midnight (0 = 12:00 AM). Before writing ANY rationale involving time of day, opening hours, or schedule sensibility, you MUST convert these to clock time by dividing by 60.
+
+  - Divide minutes by 60.
+  - The whole number is the hour; the remainder is the minutes.
+  - Convert to AM/PM.
+
+Examples you MUST follow:
+  - 540 minutes → 9 hours, 0 minutes → 9:00 AM
+  - 887 minutes → 14 hours, 47 minutes → 2:47 PM
+  - 1218 minutes → 20 hours, 18 minutes → 8:18 PM
+
+Do NOT estimate, infer, or guess the time based on stop order. Perform this calculation for every single stop before commenting on lateness, opening hours, or time-of-day sensibility.
+
+═══════════════════════════════════════════════════════════
 ENGINE STATUS
 ═══════════════════════════════════════════════════════════
 {{ENGINE_STATUS}}
@@ -59,7 +76,7 @@ Provide a 1–3 sentence rationale per sub-criterion.
 ─── ACTIVITY QUALITY ───
 11. activity_variety — Is there a good mix of activity types, or is the trip repetitive (e.g. five bars in a row, three museums back-to-back)?
 12. activity_budget — Is the overall expense profile of the activities reasonable and balanced?
-13. activity_sensibility — Do the chosen stops and their order make intuitive sense? (e.g. dinner before drinks, not museum at 10pm.)
+13. activity_sensibility — Do the chosen stops and their order make intuitive sense? (e.g. dinner before drinks, not museum at 10pm.) After converting arrival/departure minutes to clock time, verify venues are actually open at those hours and that the activity fits the time of day.
 
 ═══════════════════════════════════════════════════════════
 OUTPUT FORMAT
