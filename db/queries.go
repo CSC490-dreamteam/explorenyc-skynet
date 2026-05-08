@@ -30,6 +30,42 @@ func GetNextUnmaterialized(ctx context.Context, pool *pgxpool.Pool) (string, []b
 	return id, jsonInput, err
 }
 
+// finds up to N materialized but unrated routes, returns id, json_input, json_output
+func GetNextNUnratedMaterialized(ctx context.Context, pool *pgxpool.Pool, limit int) ([]struct {
+	ID         string
+	JSONInput  []byte
+	JSONOutput []byte
+}, error) {
+	query := `
+		SELECT id, json_input, json_output FROM route_maker
+		WHERE is_materialized = TRUE AND is_rated = FALSE
+		ORDER BY id ASC
+		LIMIT $1`
+	rows, err := pool.Query(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []struct {
+		ID         string
+		JSONInput  []byte
+		JSONOutput []byte
+	}
+	for rows.Next() {
+		var r struct {
+			ID         string
+			JSONInput  []byte
+			JSONOutput []byte
+		}
+		if err := rows.Scan(&r.ID, &r.JSONInput, &r.JSONOutput); err != nil {
+			return nil, err
+		}
+		results = append(results, r)
+	}
+	return results, rows.Err()
+}
+
 // insert rating of a route
 func InsertRouteRating(ctx context.Context, pool *pgxpool.Pool, materializerID string, jsonRatings []byte, llmUsed string) error {
 	insertQuery := `INSERT INTO route_rater (materializer_id, json_ratings, llm_used) VALUES ($1, $2, $3)`

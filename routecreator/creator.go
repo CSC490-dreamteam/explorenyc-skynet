@@ -106,7 +106,7 @@ func BatchSubmit(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, batchname st
 
 }
 
-func RunBatchFetch(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.GeminiClient, jobName string) {
+func BatchFetch(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.GeminiClient, jobName string) {
 	ctx := context.Background()
 
 	job, err := smartModel.Client.Batches.Get(ctx, jobName, nil)
@@ -148,8 +148,7 @@ func RunBatchFetch(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel 
 		//pick a random scenario for validation + db insert
 		scenario := data.RandomScenario()
 
-		valPrompt := strings.ReplaceAll(validatorPrompt, "{{SCENARIO_INSTRUCTIONS}}", scenario.GeneratorPrompt)
-		valPrompt = strings.ReplaceAll(valPrompt, "{{GENERATED_JSON}}", generatedJSON)
+		valPrompt := strings.ReplaceAll(validatorPrompt, "{{GENERATED_JSON}}", generatedJSON)
 
 		verdict, err := dumbModel.Prompt(valPrompt)
 		if err != nil {
