@@ -65,7 +65,7 @@ func main() {
 		log.Fatalf("smart model init failed: %v", err)
 	}
 
-	//CLI command
+	//CLI commands
 	switch subcommand {
 	case "generate":
 		routecreator.Run(pool, genModel, validModel)
@@ -83,7 +83,6 @@ func main() {
 		routecreator.BatchFetch(pool, genModel, validModel, *name)
 	case "batch-full":
 		routecreator.BatchFull(pool, genModel, validModel)
-
 	case "batch-rate-submit":
 		routeprocessor.BatchRateSubmit(pool, raterModel)
 	case "batch-rate-fetch":
@@ -94,12 +93,9 @@ func main() {
 			log.Fatal("batch-rate-fetch requires -n <job-name>")
 		}
 		routeprocessor.BatchRateFetch(pool, raterModel, *name)
-
 	case "batch-rate-full":
-
 		routeprocessor.BatchRateFull(pool, raterModel)
 	case "batch-rate-mat":
-
 		routeprocessor.BatchRateMat(pool, raterModel)
 
 	default:

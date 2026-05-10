@@ -30,7 +30,7 @@ func GetNextUnmaterialized(ctx context.Context, pool *pgxpool.Pool) (string, []b
 	return id, jsonInput, err
 }
 
-// finds up to N materialized but unrated routes, returns id, json_input, json_output
+// finds up to N materialized but NOT-rated routes, returns id, json_input, json_output
 func GetNextNUnratedMaterialized(ctx context.Context, pool *pgxpool.Pool, limit int) ([]struct {
 	ID         string
 	JSONInput  []byte

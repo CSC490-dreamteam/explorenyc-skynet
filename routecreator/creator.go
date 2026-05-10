@@ -22,6 +22,7 @@ var creatorPrompt string
 //go:embed routecreator_validate.txt
 var validatorPrompt string
 
+// creates a route with an LLM, validates it, and inserts it into the DB if valid
 func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.GeminiClient) {
 
 	//get a random scenario
@@ -69,6 +70,7 @@ func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.Gemini
 
 const batchjobName = "take1-of-skynet"
 
+// submits a batch to google's llm api
 func BatchSubmit(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) (string, error) {
 
 	const batchRunsPerScenario = 3
@@ -107,6 +109,7 @@ func BatchSubmit(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) (string, err
 
 }
 
+// fetch a batch from google
 func BatchFetch(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.GeminiClient, jobName string) {
 	ctx := context.Background()
 
@@ -178,6 +181,8 @@ func BatchFetch(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai
 	log.Printf("batch fetch complete: inserted=%d rejected=%d errored=%d", inserted, rejected, errored)
 	_ = placesList //placeholder if you need it later
 }
+
+// auto batches submits then fetches with timers to keep pinging until google finishes the batch
 func BatchFull(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.GeminiClient) {
 	jobName, err := BatchSubmit(DBpool, smartModel)
 	if err != nil {

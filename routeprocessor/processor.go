@@ -22,6 +22,7 @@ import (
 //go:embed routerater_prompt.txt
 var raterPrompt string
 
+// grabs unmaterialized rows, sends to routing engine, marks as materialized with response, then prompts smartModel for ratings and inserts ratings into DB
 func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) {
 	ctx := context.Background()
 
@@ -106,6 +107,7 @@ func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) {
 
 const batchSize = 20
 
+// submit a batch of rating jobs for unmaterialized rows
 func BatchRateSubmit(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) (string, error) {
 
 	ctx := context.Background()
@@ -200,6 +202,7 @@ func BatchRateSubmit(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) (string,
 	return job.Name, nil
 }
 
+// fetches a batch of rating from google and inserts into DB
 func BatchRateFetch(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, jobName string) {
 	ctx := context.Background()
 
@@ -264,6 +267,7 @@ func BatchRateFetch(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, jobName s
 	log.Printf("rating batch fetch complete: inserted=%d errored=%d", inserted, errored)
 }
 
+// automatically submits a batch and sets timers to keep pinging google and fetches when batch job is done
 func BatchRateFull(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) {
 	jobName, err := BatchRateSubmit(DBpool, smartModel)
 	if err != nil {
@@ -294,6 +298,7 @@ func BatchRateFull(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) {
 	log.Fatalf("batch job did not succeed after all retries")
 }
 
+// batches already materialized rows,  prompts smartModel for ratings and inserts ratings into DB
 func BatchRateMat(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) {
 	ctx := context.Background()
 
