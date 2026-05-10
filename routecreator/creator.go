@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"strings"
+	"time"
 
 	_ "embed"
 
@@ -68,7 +69,8 @@ func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.Gemini
 
 const batchjobName = "take1-of-skynet"
 
-func BatchSubmit(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, batchname string) {
+func BatchSubmit(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) (string, error) {
+
 	const batchRunsPerScenario = 3
 	ctx := context.Background()
 
@@ -94,15 +96,14 @@ func BatchSubmit(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, batchname st
 
 	job, err := smartModel.Client.Batches.Create(ctx, smartModel.Model, &genai.BatchJobSource{
 		InlinedRequests: inlined,
-	}, &genai.CreateBatchJobConfig{
-		DisplayName: batchname,
-	})
+	}, &genai.CreateBatchJobConfig{})
 	if err != nil {
 		log.Printf("batch create failed: %v", err)
-		return
+		return "", err
 	}
 
 	log.Printf("batch submitted: displayName=%s name=%s state=%s", job.DisplayName, job.Name, job.State)
+	return job.Name, nil
 
 }
 
@@ -176,4 +177,33 @@ func BatchFetch(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai
 
 	log.Printf("batch fetch complete: inserted=%d rejected=%d errored=%d", inserted, rejected, errored)
 	_ = placesList //placeholder if you need it later
+}
+func BatchFull(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, dumbModel *ai.GeminiClient) {
+	jobName, err := BatchSubmit(DBpool, smartModel)
+	if err != nil {
+		log.Fatalf("batch-submit failed: %v", err)
+	}
+
+	waits := []time.Duration{2 * time.Minute, 2 * time.Minute, 4 * time.Minute}
+	ctx := context.Background()
+
+	for i, wait := range waits {
+		log.Printf("waiting %v before status check (attempt %d)...", wait, i+1)
+		time.Sleep(wait)
+
+		job, err := smartModel.Client.Batches.Get(ctx, jobName, nil)
+		if err != nil {
+			log.Printf("status check %d failed: %v", i+1, err)
+			continue
+		}
+
+		log.Printf("batch job %s state: %s", job.Name, job.State)
+
+		if job.State == genai.JobStateSucceeded {
+			BatchFetch(DBpool, smartModel, dumbModel, jobName)
+			return
+		}
+	}
+
+	log.Fatalf("batch job did not succeed after all retries")
 }

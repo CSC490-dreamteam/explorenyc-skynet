@@ -72,13 +72,7 @@ func main() {
 	case "process":
 		routeprocessor.Run(pool, raterModel)
 	case "batch-submit":
-		fs := flag.NewFlagSet("batch-submit", flag.ExitOnError)
-		name := fs.String("n", "", "display name for the batch job")
-		fs.Parse(os.Args[2:])
-		if *name == "" {
-			log.Fatal("batch-submit requires -n <name>")
-		}
-		routecreator.BatchSubmit(pool, genModel, *name)
+		routecreator.BatchSubmit(pool, genModel)
 	case "batch-fetch":
 		fs := flag.NewFlagSet("batch-fetch", flag.ExitOnError)
 		name := fs.String("n", "", "batch job name (e.g. batches/abc123)")
@@ -87,14 +81,11 @@ func main() {
 			log.Fatal("batch-fetch requires -n <job-name>")
 		}
 		routecreator.BatchFetch(pool, genModel, validModel, *name)
+	case "batch-full":
+		routecreator.BatchFull(pool, genModel, validModel)
+
 	case "batch-rate-submit":
-		fs := flag.NewFlagSet("batch-rate-submit", flag.ExitOnError)
-		name := fs.String("n", "", "display name for the rating batch job")
-		fs.Parse(os.Args[2:])
-		if *name == "" {
-			log.Fatal("batch-rate-submit requires -n <name>")
-		}
-		routeprocessor.BatchRateSubmit(pool, raterModel, *name)
+		routeprocessor.BatchRateSubmit(pool, raterModel)
 	case "batch-rate-fetch":
 		fs := flag.NewFlagSet("batch-rate-fetch", flag.ExitOnError)
 		name := fs.String("n", "", "rating batch job name (e.g. batches/abc123)")
@@ -105,21 +96,11 @@ func main() {
 		routeprocessor.BatchRateFetch(pool, raterModel, *name)
 
 	case "batch-rate-full":
-		fs := flag.NewFlagSet("batch-rate-full", flag.ExitOnError)
-		name := fs.String("n", "", "display name for the rating batch job")
-		fs.Parse(os.Args[2:])
-		if *name == "" {
-			log.Fatal("batch-rate-full requires -n <name>")
-		}
-		routeprocessor.BatchRateFull(pool, raterModel, *name)
+
+		routeprocessor.BatchRateFull(pool, raterModel)
 	case "batch-rate-mat":
-		fs := flag.NewFlagSet("batch-rate-mat", flag.ExitOnError)
-		name := fs.String("n", "", "display name for the materialized rating batch job")
-		fs.Parse(os.Args[2:])
-		if *name == "" {
-			log.Fatal("batch-rate-mat requires -n <name>")
-		}
-		routeprocessor.BatchRateMat(pool, raterModel, *name)
+
+		routeprocessor.BatchRateMat(pool, raterModel)
 
 	default:
 		log.Fatalf("unknown subcommand: %s", subcommand)

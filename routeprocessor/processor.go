@@ -106,7 +106,7 @@ func Run(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) {
 
 const batchSize = 20
 
-func BatchRateSubmit(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, batchname string) (string, error) {
+func BatchRateSubmit(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) (string, error) {
 
 	ctx := context.Background()
 
@@ -190,9 +190,7 @@ func BatchRateSubmit(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, batchnam
 
 	job, err := smartModel.Client.Batches.Create(ctx, smartModel.Model, &genai.BatchJobSource{
 		InlinedRequests: inlined,
-	}, &genai.CreateBatchJobConfig{
-		DisplayName: batchname,
-	})
+	}, &genai.CreateBatchJobConfig{})
 	if err != nil {
 		log.Printf("rating batch create failed: %v", err)
 		return "", err
@@ -266,8 +264,8 @@ func BatchRateFetch(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, jobName s
 	log.Printf("rating batch fetch complete: inserted=%d errored=%d", inserted, errored)
 }
 
-func BatchRateFull(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, batchname string) {
-	jobName, err := BatchRateSubmit(DBpool, smartModel, batchname)
+func BatchRateFull(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) {
+	jobName, err := BatchRateSubmit(DBpool, smartModel)
 	if err != nil {
 		log.Fatalf("batch-rate-submit failed: %v", err)
 	}
@@ -296,7 +294,7 @@ func BatchRateFull(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, batchname 
 	log.Fatalf("batch job did not succeed after all retries")
 }
 
-func BatchRateMat(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, batchname string) {
+func BatchRateMat(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient) {
 	ctx := context.Background()
 
 	rows, err := db.GetNextNUnratedMaterialized(ctx, DBpool, batchSize)
@@ -328,9 +326,7 @@ func BatchRateMat(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, batchname s
 
 	job, err := smartModel.Client.Batches.Create(ctx, smartModel.Model, &genai.BatchJobSource{
 		InlinedRequests: inlined,
-	}, &genai.CreateBatchJobConfig{
-		DisplayName: batchname,
-	})
+	}, &genai.CreateBatchJobConfig{})
 	if err != nil {
 		log.Fatalf("rating batch create failed: %v", err)
 	}
@@ -338,7 +334,7 @@ func BatchRateMat(DBpool *pgxpool.Pool, smartModel *ai.GeminiClient, batchname s
 	jobName := job.Name
 	log.Printf("rating batch submitted: displayName=%s name=%s state=%s", job.DisplayName, job.Name, job.State)
 
-	waits := []time.Duration{2 * time.Minute, 2 * time.Minute, 4 * time.Minute}
+	waits := []time.Duration{180 * time.Second, 2 * time.Minute, 4 * time.Minute}
 
 	for i, wait := range waits {
 		log.Printf("waiting %v before status check (attempt %d)...", wait, i+1)
