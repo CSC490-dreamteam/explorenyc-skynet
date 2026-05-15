@@ -1,4 +1,4 @@
-#Skynet
+# Skynet
 This codebase is used for creatring and rating synthetic user data for ExploreNYC.
 
 There are 2 main functions: Creating a route and Critiquing it
